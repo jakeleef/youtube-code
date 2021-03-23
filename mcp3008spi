@@ -1,0 +1,51 @@
+# Jacob Lee
+# 23 Mar 2021
+# This is designed to be a quickstart code to test the MCP3008 SPI and allow simple copy and pasting
+# into other code. Required packages installation is below:
+# sudo pip install adafruit-blinka
+# sudo pip install adafruit-circuitpython-mcp3xxx
+
+import os
+import time
+import busio
+import digitalio
+import board
+import adafruit_mcp3xxx.mcp3008 as MCP
+from adafruit_mcp3xxx.analog_in import AnalogIn
+
+# create the spi bus
+spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
+
+# create the cs (chip select)
+cs = digitalio.DigitalInOut(board.D22)
+
+# create the mcp object
+mcp = MCP.MCP3008(spi, cs)
+
+######### create an analog input channel on pins 1-8 (1-indexed on physical pins, 0-indexed in code)
+pin1 = AnalogIn(mcp, MCP.P0)
+pin2 = AnalogIn(mcp, MCP.P1)
+pin3 = AnalogIn(mcp, MCP.P2)
+pin4 = AnalogIn(mcp, MCP.P3)
+pin5 = AnalogIn(mcp, MCP.P4)
+pin6 = AnalogIn(mcp, MCP.P5)
+pin7 = AnalogIn(mcp, MCP.P6)
+pin8 = AnalogIn(mcp, MCP.P7)
+#########
+
+while True:
+    # read the analog pins
+    trim_pot1 = pin1.value
+    trim_pot2 = pin2.value
+    trim_pot3 = pin3.value
+    trim_pot4 = pin4.value
+    trim_pot5 = pin5.value
+    trim_pot6 = pin6.value
+    trim_pot7 = pin7.value
+    trim_pot8 = pin8.value
+
+    print('trim_pot1:' + str(trim_pot1) + ', trim_pot2:' + str(trim_pot2) + ', trim_pot3:' + str(trim_pot3) + ', trim_pot4:' + str(trim_pot4))
+    print('trim_pot5:' + str(trim_pot5) + ', trim_pot6:' + str(trim_pot6) + ', trim_pot7:' + str(trim_pot7) + ', trim_pot8:' + str(trim_pot8))
+
+    # hang out and do nothing for 1/10 sec
+    time.sleep(0.1)
