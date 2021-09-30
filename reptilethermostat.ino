@@ -28,10 +28,6 @@ void setup() {
   dht.begin();
   
   display.clearDisplay();
-
-  pinMode(relay1, OUTPUT);
-  pinMode(relay2, OUTPUT);
-  pinMode(relay3, OUTPUT);
   
 }
 
