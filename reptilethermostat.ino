@@ -14,10 +14,6 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 DS18B20 ds(6);
 
-int relay1 = 14;
-int relay2 = 16;
-int relay3 = 10;
-
 void setup() {
   Serial.begin(9600);
   Serial.print("Devices: ");
@@ -40,20 +36,6 @@ void setup() {
 }
 
 void loop() {
-  /*
-  digitalWrite(relay1, HIGH);
-  delay(200);
-  digitalWrite(relay2, HIGH);
-  delay(200);
-  digitalWrite(relay3, HIGH);
-  delay(1000);
-
-  digitalWrite(relay1, LOW);
-  delay(200);
-  digitalWrite(relay2, LOW);
-  delay(200);
-  digitalWrite(relay3, LOW);
-*/
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
@@ -75,5 +57,5 @@ void loop() {
   
   display.display();
 
-  delay(5000);
+  delay(1000);
 }
