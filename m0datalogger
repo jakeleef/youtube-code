@@ -1,0 +1,278 @@
+#include <SD.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+//datalogging declarations
+File logfile;
+#define cardSelect 4
+char filenum[2];
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+// battery info
+float battV = 0;
+int battPin = 9;
+
+// digital inputs
+int bin1 = 13; // maybe change to enable error code blinking or just use display for errors
+int bin2 = 12;
+int bin3 = 11;
+int bin4 = 10;
+
+// analog inputs
+int an1 = A0;
+int an2 = A1;
+int an3 = A2;
+int an4 = A3;
+
+// freq input
+int freqIn = A4;
+int freq = 0;
+
+bool testrun = true;
+int startpin = 6;
+
+
+void setup() {
+  // put your setup code here, to run once:
+  Wire.begin();  
+  Serial.begin(9600);
+  Serial.println("Serial Started");
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+    
+  Serial.print("INIT SD..."); // change to display on display
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0,30);
+  display.print("INIT SD...");
+  display.display();
+  delay(1000);
+
+  if (!SD.begin(cardSelect)) {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0,30);
+    display.print("SD INIT FAIL");
+    display.display();
+    delay(3000);
+  } else {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0,30);
+    display.print("SD READY");
+    display.display();
+    delay(1000);
+  }
+  
+  pinMode(battPin, INPUT);
+
+  pinMode(startpin, INPUT_PULLUP);
+
+  pinMode(bin1, INPUT);
+  pinMode(bin2, INPUT);
+  pinMode(bin3, INPUT);
+  pinMode(bin4, INPUT);
+  
+  pinMode(an1, INPUT);
+  pinMode(an2, INPUT);
+  pinMode(an3, INPUT);
+  pinMode(an4, INPUT);
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  char filename[15];
+  if (testrun) {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0,30);
+    display.print("CREATING NEW FILE...");
+    display.display();
+    delay(1000);
+    
+    strcpy(filename, "/ANALOG00.TXT");
+    for (uint8_t i = 0; i < 100; i++) {
+      filename[7] = '0' + i/10;
+      filename[8] = '0' + i%10;
+      // create if does not exist, do not open existing, write, sync after write
+      if (!SD.exists(filename)) {
+        break;
+      }
+    }
+    filenum[0] = filename[7];
+    filenum[1] = filename[8];
+
+    logfile = SD.open(filename, FILE_WRITE);
+    testrun = false;
+
+    
+
+    if( ! logfile ) {
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(WHITE);
+      display.setCursor(0,30);
+      display.print("COULDNT CREATE: ");
+      display.setCursor(0,40);
+      display.println(filename);
+      display.display();
+      delay(1000);
+    } else {
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(WHITE);
+      display.setCursor(0,30);
+      display.print("CREATED: ");
+      display.setCursor(0,40);
+      display.println(filename);
+      display.display();
+      delay(1000);
+    }
+  }
+
+  battV = analogRead(battPin);
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+  display.setCursor(0,0);
+  display.print(filenum);
+  display.setCursor(85,0);
+  display.print(battV*2*3.3/1024/4.2*100);
+  display.println("%");
+  
+  display.setCursor(0,10);
+  display.print("D In: ");
+  display.print(digitalRead(bin1));
+  display.print(",  ");
+  display.print(digitalRead(bin2));
+  display.print(",  ");
+  display.print(digitalRead(bin3));
+  display.print(",  ");
+  display.println(digitalRead(bin4));
+
+  display.setCursor(0,20);
+  display.print("A In: ");
+  display.print(analogRead(an1));
+  display.print(",");
+  display.print(analogRead(an2));
+  display.print(",");
+  display.print(analogRead(an3));
+  display.print(",");
+  display.println(analogRead(an4));
+
+  display.setCursor(0,30);
+  display.print("Freq: ");
+  display.print(analogRead(freqIn));
+
+  display.display();
+  
+
+  if (digitalRead(startpin) == 1) {
+    
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setCursor(60,30);
+    display.print("3");
+    display.display();
+    delay(1000);
+    //refreshscreen
+    display.clearDisplay();
+    display.setCursor(60,30);
+    display.print("2");
+    display.display();
+    delay(1000);
+    //refreshscreen
+    display.clearDisplay();
+    display.setCursor(60,30);
+    display.print("1");
+    display.display();
+    delay(1000);
+    
+
+    while (digitalRead(startpin) == 1) {
+      display.clearDisplay();
+      display.setCursor(20,30);
+      display.setTextSize(1);
+      display.print("REC: ");
+      display.println(filename);
+      display.display();
+      delay(1000);
+
+      logfile.print(digitalRead(bin1));
+      logfile.flush();
+      logfile.print(",");
+      logfile.flush();
+      logfile.print(digitalRead(bin2));
+      logfile.flush();
+      logfile.print(",");
+      logfile.flush();
+      logfile.print(digitalRead(bin3));
+      logfile.flush();
+      logfile.print(",");
+      logfile.flush();
+      logfile.print(digitalRead(bin4));
+      logfile.flush();
+      logfile.print(",");
+      logfile.flush();
+      logfile.print(analogRead(an1));
+      logfile.flush();
+      logfile.print(",");
+      logfile.flush();
+      logfile.print(analogRead(an2));
+      logfile.flush();
+      logfile.print(",");
+      logfile.flush();
+      logfile.print(analogRead(an3));
+      logfile.flush();
+      logfile.print(",");
+      logfile.flush();
+      logfile.print(analogRead(an4));
+      logfile.flush();
+      logfile.print(",");
+      logfile.flush();
+      logfile.println(millis());
+      logfile.flush();
+    }
+
+    display.clearDisplay();
+    display.setCursor(0,30);
+    display.setTextSize(1);
+    display.print("CLOSING FILE");
+    display.display();
+    delay(1000);
+
+    logfile.close();
+    testrun = true;
+
+    display.clearDisplay();
+    display.setCursor(0,30);
+    display.setTextSize(1);
+    display.print("FILE CREATED: ");
+    display.setCursor(0,40);
+    display.println(filename);
+    display.display();
+    delay(2000);
+  }
+  
+
+  delay(100);
+}
+
+
+
+
